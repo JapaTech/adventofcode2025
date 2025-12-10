@@ -1,6 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
+using System.Numerics;
+
 
 namespace adventofcode
 {
@@ -50,90 +51,77 @@ namespace adventofcode
             return energiaTotal;
         }
 
-        public static ulong DisjuntoresComMaiorEnergia2(string[] energiasDosDisjuntores)
+        public static BigInteger DisjuntoresComMaiorEnergia2(string[] energiasDosDisjuntores, int qtdDisjuntores)
         {
-            ulong energiaTotal = 0;
+            BigInteger energiaTotal = 0;
+            
 
             foreach (var item in energiasDosDisjuntores)
             {
                 int[] disjuntores = item.Select(c => int.Parse(c.ToString())).ToArray();
                 SortedDictionary<int, int> maioresDisjuntores = new SortedDictionary<int, int>();
 
-                int valorMaior = disjuntores.Max();
-                int maiorIndice = disjuntores.IndexOf(valorMaior);
-                maioresDisjuntores.Add(maiorIndice, valorMaior);
-                disjuntores[maiorIndice] = -1;                
+                int disjuntoreParaPegar = (disjuntores.Length - qtdDisjuntores);
 
-                for (int i = 0; i < 11; i++)
+                BigInteger contador = 0;
+                List<int> indicesParaRemover = new List<int>();
+                
+                List<(int indice, int valor)> todosDigitos = new List<(int, int)>();
+                for (int i = 0; i < disjuntores.Length; i++)
                 {
-                    
-                    valorMaior = disjuntores.Max();
+                    todosDigitos.Add((i, disjuntores[i]));
+                }
 
-                    var maiorValorEsquerda = disjuntores.Select((valor, indice) => new { valor, indice })
-                   .Take(maiorIndice).LastOrDefault(x => x.valor == valorMaior);
-                    var maiorValorDireita = disjuntores.Select((valor, indice) => new { valor, indice })
-                        .Skip(maiorIndice).FirstOrDefault(x => x.valor >= valorMaior);
+                while (indicesParaRemover.Count < disjuntoreParaPegar)
+                {
+                    var t = todosDigitos.Where(x => x.indice == contador);
+                    BigInteger n = (BigInteger) t.First().valor;
 
-                    ulong energiaEsquerda = 0;
-                    ulong energiaDireita = 0;
-                    ulong contador = 1;
-                    var dijuntoresComEsquerda = new SortedDictionary<int, int>(maioresDisjuntores);
-                    var dijuntoresComDireita = new SortedDictionary<int, int>(maioresDisjuntores);
+                    n = n *  BigInteger.Pow(10, (todosDigitos.Count -2 - (int) contador));                    
 
-                    if (maiorValorDireita != null)                 
+                    var sb = new StringBuilder();
+                    for (BigInteger i = contador + 1; i < todosDigitos.Count; i++)
+                    {                        
+                        sb.Append(todosDigitos[(int) i].valor.ToString());
+                    }                    
+                    BigInteger numerosRestantes = BigInteger.Parse(sb.ToString());
+
+
+                    if (n < numerosRestantes)
                     {
-                        dijuntoresComDireita.Add(maiorValorDireita.indice, maiorValorDireita.valor);
-                        foreach (var disjuntor in dijuntoresComDireita.Reverse())
-                        {
-                            //Console.WriteLine($"Key {disjuntor.Key}, Value {disjuntor.Value}");
-                            energiaDireita += (ulong)disjuntor.Value * contador;
-                            contador *= 10;
-                        }
+                        indicesParaRemover.Add((int)contador);
+                        todosDigitos.RemoveAll(x =>x.indice == contador);
                     }
-
-                    contador = 1;
-                    if (maiorValorEsquerda != null)                 
+                    if(contador <= 1 && indicesParaRemover.Count >= disjuntoreParaPegar)
                     {
-                        dijuntoresComEsquerda.Add(maiorValorEsquerda.indice, maiorValorEsquerda.valor);
-                        foreach (var disjuntor in dijuntoresComEsquerda.Reverse())
-                        {
-                            //Console.WriteLine($"Key {disjuntor.Key}, Value {disjuntor.Value}");
-                            energiaEsquerda += (ulong)disjuntor.Value * contador;
-                            contador *= 10;
-                        }
-
-                    }
-
-                    Console.WriteLine("Energia Esquerda---- " + energiaEsquerda);
-                    Console.WriteLine("Energia Direita----- " + energiaDireita);
-                    Console.WriteLine("===================");
-
-                    if (energiaEsquerda > energiaDireita)
-                    {
-                        maioresDisjuntores.Add(maiorValorEsquerda.indice, maiorValorEsquerda.valor);                                              
-                        maiorIndice = maiorValorEsquerda.indice;
-                        disjuntores[maiorValorEsquerda.indice] = -1;
+                        contador = 0;
                     }
                     else
                     {
-                        maioresDisjuntores.Add(maiorValorDireita.indice, maiorValorDireita.valor);
-                        maiorIndice = maiorValorDireita.indice;
-                        disjuntores[maiorValorDireita.indice] = -1;
+                        contador++;
                     }
-
+ 
                 }
 
-                ulong maiorEnergia = 0;
-                ulong contadorFinal = 1;
+                for (int i = 0; i < disjuntores.Length; i++)
+                {
+                    if(indicesParaRemover.Contains(i))
+                        continue;
+
+                    maioresDisjuntores.Add(i, disjuntores[i]);
+                }
+
+                contador = 1;
+                BigInteger maiorEnergia = 0;
 
                 foreach (var disjuntor in maioresDisjuntores.Reverse())
                 {
                     //Console.WriteLine($"Key {disjuntor.Key}, Value {disjuntor.Value}");
-                    maiorEnergia += (ulong)disjuntor.Value * contadorFinal;
-                    contadorFinal *= 10;
+                    maiorEnergia += (BigInteger)disjuntor.Value * contador;
+                    contador *= 10;
                 }
 
-                Console.WriteLine("Maior energia: " + maiorEnergia);
+                //Console.WriteLine("Maior energia: " + maiorEnergia);
                 energiaTotal += maiorEnergia;
             }
             return energiaTotal;
